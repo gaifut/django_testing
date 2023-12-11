@@ -3,7 +3,7 @@ from django.urls import reverse
 
 import pytest
 
-from yanews.settings import NEWS_COUNT_ON_HOME_PAGE 
+from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
 
 @pytest.mark.django_db
@@ -39,6 +39,7 @@ def test_anonymous_client_has_no_form(client, news_id):
     url = reverse('news:detail', args=news_id)
     response = client.get(url)
     assert 'form' not in response.context
+
 
 @pytest.mark.django_db
 def test_authorized_client_has_form(author_client, news_id):

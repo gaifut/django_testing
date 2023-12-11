@@ -4,10 +4,9 @@ from django.urls import reverse
 from http import HTTPStatus
 
 from news.forms import WARNING
-from news.models import News, Comment
+from news.models import Comment
 
 import pytest
-
 
 
 @pytest.mark.django_db

@@ -15,9 +15,10 @@ DELETE_COMMENT_PAGE = ('news:delete', pytest.lazy_fixture('comment_id'))
 EDIT_COMMENT_PAGE = ('news:edit', pytest.lazy_fixture('comment_id'))
 
 edit_delete_page_combo = (
-        DELETE_COMMENT_PAGE,
-        EDIT_COMMENT_PAGE,
-    )
+    DELETE_COMMENT_PAGE,
+    EDIT_COMMENT_PAGE,
+)
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
