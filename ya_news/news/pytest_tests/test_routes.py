@@ -1,8 +1,6 @@
-import pytest
-
-from http import HTTPStatus
-
 from django.urls import reverse
+from http import HTTPStatus
+import pytest
 from pytest_django.asserts import assertRedirects
 
 # Pages and their url references
@@ -14,13 +12,17 @@ NEWS_SAMPLE_PAGE = ('news:detail', pytest.lazy_fixture('news_id'))
 DELETE_COMMENT_PAGE = ('news:delete', pytest.lazy_fixture('comment_id'))
 EDIT_COMMENT_PAGE = ('news:edit', pytest.lazy_fixture('comment_id'))
 
-edit_delete_page_combo = (
-    DELETE_COMMENT_PAGE,
-    EDIT_COMMENT_PAGE,
-)
+
+@pytest.fixture
+def login_url():
+    return reverse('users:login')
 
 
-@pytest.mark.django_db
+LOGIN = pytest.lazy_fixture('login_url')
+
+pytestmark = pytest.mark.django_db
+
+
 @pytest.mark.parametrize(
     'name, args',
     (
@@ -32,9 +34,7 @@ edit_delete_page_combo = (
     )
 )
 def test_pages_availability_to_anonymous_user(client, name, args):
-    url = reverse(name, args=args)
-    response = client.get(url)
-    assert response.status_code == HTTPStatus.OK
+    assert client.get(reverse(name, args=args)).status_code == HTTPStatus.OK
 
 
 @pytest.mark.parametrize(
@@ -44,22 +44,26 @@ def test_pages_availability_to_anonymous_user(client, name, args):
         (pytest.lazy_fixture('reader_client'), HTTPStatus.NOT_FOUND),
     )
 )
-@pytest.mark.parametrize('name, args', edit_delete_page_combo)
+@pytest.mark.parametrize('name, args', (
+    DELETE_COMMENT_PAGE,
+    EDIT_COMMENT_PAGE,
+))
 def test_delete_edit_comment_author(
     parametrized_client,
     name,
     args,
     expected_status
 ):
-    url = reverse(name, args=args)
-    response = parametrized_client.get(url)
-    assert response.status_code == expected_status
+    assert parametrized_client.get(
+        reverse(name, args=args)).status_code == expected_status
 
 
-@pytest.mark.parametrize('name, args', edit_delete_page_combo)
-def test_edit_delete_comment_anonymous(client, name, args):
-    login_url = reverse('users:login')
-    url = reverse(name, args=args)
-    expected_url = f'{login_url}?next={url}'
-    response = client.get(url)
+@pytest.mark.parametrize('url_login', (LOGIN,))
+@pytest.mark.parametrize('name, args', (
+    DELETE_COMMENT_PAGE,
+    EDIT_COMMENT_PAGE,
+))
+def test_edit_delete_comment_anonymous(client, name, args, url_login):
+    expected_url = f'{url_login}?next={reverse(name, args=args)}'
+    response = client.get(reverse(name, args=args))
     assertRedirects(response, expected_url)

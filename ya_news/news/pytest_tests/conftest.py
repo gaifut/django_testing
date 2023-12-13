@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta
+
+from django.test import Client
 from django.utils import timezone
 import pytest
 
@@ -6,12 +8,13 @@ from news.forms import BAD_WORDS
 from news.models import News, Comment
 from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
-sample_count = 1  # Новость 1 is already reserved and exclided from range
-extra_samples_to_exceed_page_limit = 1
-today = datetime.today()
-now = timezone.now()
+
 bad_words_string = ' '.join(word for word in BAD_WORDS)
 
+# URLS
+@pytest.fixture
+def homepage_url():
+    return reverse('news:home')
 
 # Users and clients
 @pytest.fixture
@@ -21,6 +24,7 @@ def author(django_user_model):
 
 @pytest.fixture
 def author_client(author, client):
+    client = Client()
     client.force_login(author)
     return client
 
@@ -31,7 +35,8 @@ def reader(django_user_model):
 
 
 @pytest.fixture
-def reader_client(reader, client):
+def reader_client(reader):
+    client = Client()
     client.force_login(reader)
     return client
 
@@ -58,7 +63,7 @@ def comment(author, news_sample):
         text='Текст комментария тест',
         news=news_sample,
     )
-    comment.created = now + timedelta(days=1)
+    comment.created = timezone.now() + timedelta(days=1)
     return comment
 
 
@@ -67,32 +72,36 @@ def comment_id(comment):
     return comment.id,
 
 
-@pytest.fixture
-def comment_two(author, news_sample):
-    comment = Comment.objects.create(
-        author=author,
-        text='Текст комментария 2 тест',
-        news=news_sample,
-    )
-    comment.created = now + timedelta(days=2)
-    return comment
-
 
 @pytest.fixture
 def multiple_news_samples():
     news_objects = []
     for i in range(
-        0 + sample_count, NEWS_COUNT_ON_HOME_PAGE
-        + sample_count + extra_samples_to_exceed_page_limit
+        0 + 1, NEWS_COUNT_ON_HOME_PAGE
+        + 1 + 1
     ):
         news_object = News.objects.create(
             title=f'Новость {i}',
             text=f'Текст новости {i}',
-            date=today - timedelta(days=i),
+            date=datetime.today() - timedelta(days=i),
         ),
         news_objects.append(news_object)
     return news_objects
 
+
+@pytest.fixture
+def multiple_comments(author, news_sample):
+    comments = []
+    for i in range(222):
+        created_at = timezone.now() + timedelta(days=i+1)
+        comments.append(
+            Comment.objects.create(
+                author=author,
+                text=f'Текст комментария {i+1}',
+                created_at=created_at,
+                news=news_sample)
+                )
+    return comments
 
 #  forms related
 @pytest.fixture
