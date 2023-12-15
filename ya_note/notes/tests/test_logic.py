@@ -1,10 +1,9 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from http import HTTPStatus
 from pytils.translit import slugify
 
 from notes.models import Note
-from .shared_test_input import SharedTestInputMixin
+from .shared_test_input import SharedTestInput
 from .shared_urls import (
     NOTES_ADD_URL,
     NOTE_CREATE_SUCCESS,
@@ -34,7 +33,7 @@ FORM_DATA_DUPLICATE_SLUG = {
 }
 
 
-class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
+class TestNoteCreateEditDelete(SharedTestInput):
 
     def test_anonymous_user_cannot_create_note(self):
         initial_note_count = Note.objects.count()
@@ -43,7 +42,6 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
         self.assertEqual(initial_note_count, final_note_count)
 
     def test_user_can_create_note(self):
-        self.login_author()
         initial_note_count = Note.objects.count()
         self.assertRedirects(self.client_author.post(
             NOTES_ADD_URL, data=FORM_DATA_NOTE), NOTE_CREATE_SUCCESS
@@ -57,14 +55,12 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
 
     def test_author_can_delete_note(self):
         self.generate_single_note()
-        self.login_author()
         initial_note_count = Note.objects.count()
         self.client_author.delete(NOTES_DELETE_URL)
         final_note_count = Note.objects.count()
         self.assertEqual(initial_note_count - 1, final_note_count)
 
     def test_user_cant_delete_note_of_another_user(self):
-        self.login_another()
         self.generate_single_note()
         initial_notes = list(Note.objects.all())
         self.client_another.delete(NOTES_DELETE_URL)
@@ -79,7 +75,6 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
         self.assertEqual(Note.objects.first().slug, self.note.slug)
 
     def test_author_can_edit_note(self):
-        self.login_author()
         self.generate_single_note()
         self.client_author.post(NOTES_EDIT_URL, data=FORM_DATA_NOTE)
         self.note.refresh_from_db()
@@ -89,7 +84,6 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
         self.assertEqual(self.note.author, self.user_author)
 
     def test_user_cant_edit_note_of_another_user(self):
-        self.login_another()
         self.generate_single_note()
         response = self.client_another.post(
             NOTES_EDIT_URL, data=FORM_DATA_NOTE
@@ -103,7 +97,6 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
 
     def test_cannot_create_note_with_duplicate_slug(self):
         self.generate_single_note()
-        self.login_author()
         response = self.client_author.post(
             NOTES_ADD_URL,
             data=FORM_DATA_DUPLICATE_SLUG
@@ -116,7 +109,6 @@ class TestNoteCreateEditDelete(SharedTestInputMixin, TestCase):
         self.assertEqual(note_count, 1)
 
     def test_user_can_create_note_without_slug(self):
-        self.login_author()
         self.assertRedirects(self.client_author.post(
             NOTES_ADD_URL,
             data=FORM_DATA_NO_SLUG

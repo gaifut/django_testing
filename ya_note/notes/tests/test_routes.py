@@ -1,8 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.test import TestCase
 from http import HTTPStatus
 
-from .shared_test_input import SharedTestInputMixin
+from .shared_test_input import SharedTestInput
 from .shared_urls import (
     LOGIN_URL,
     NOTES_DETAIL_URL,
@@ -17,12 +16,10 @@ from .shared_urls import (
 User = get_user_model()
 
 
-class TestRoute(SharedTestInputMixin, TestCase):
+class TestRoute(SharedTestInput):
 
     def test_availability_for_authorised_users(self):
         self.generate_single_note()
-        self.login_author()
-        self.login_another()
         user_statuses = (
             (NOTES_DETAIL_URL, self.client_author, HTTPStatus.OK),
             (NOTES_EDIT_URL, self.client_author, HTTPStatus.OK),
