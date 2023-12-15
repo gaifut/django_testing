@@ -15,6 +15,41 @@ def homepage_url():
     return reverse('news:home')
 
 
+@pytest.fixture
+def news_detail_url(news_sample):
+    return reverse('news:detail', args=(news_sample.id,))
+
+
+@pytest.fixture
+def login_url():
+    return reverse('users:login')
+
+
+@pytest.fixture
+def edit_comment_url(comment):
+    return reverse('news:edit', args=(comment.id,))
+
+
+@pytest.fixture
+def delete_comment_url(comment):
+    return reverse('news:delete', args=(comment.id,))
+
+
+@pytest.fixture
+def register_url():
+    return reverse('users:signup')
+
+
+@pytest.fixture
+def logout_url():
+    return reverse('users:logout')
+
+
+@pytest.fixture
+def base_url(login_url):
+    return f'{login_url}?next='
+
+
 # Users and clients
 @pytest.fixture
 def author(django_user_model):
@@ -22,7 +57,7 @@ def author(django_user_model):
 
 
 @pytest.fixture
-def author_client(author, client):
+def author_client(author):
     client = Client()
     client.force_login(author)
     return client
@@ -43,26 +78,24 @@ def reader_client(reader):
 # Instances and their attributes
 @pytest.fixture
 def news_sample():
-    news_sample = News.objects.create(
+    return News.objects.create(
         title='Новость 1',
         text='Текст новости 1'
     )
-    return news_sample
 
 
 @pytest.fixture
 def comment(author, news_sample):
-    comment = Comment.objects.create(
+    return Comment.objects.create(
         author=author,
         text='Текст комментария тест',
         news=news_sample,
     )
-    return comment
 
 
 @pytest.fixture
 def multiple_news_samples():
-    news_objects = [News(
+    News.objects.bulk_create([News(
         title=f'Новость {i}',
         text=f'Текст новости {i}',
         date=datetime.today() - timedelta(days=i),
@@ -70,20 +103,17 @@ def multiple_news_samples():
         for i in range(
         0 + 1, NEWS_COUNT_ON_HOME_PAGE
         + 1 + 1)
-    ]
-    News.objects.bulk_create(news_objects)
+    ])
 
 
 @pytest.fixture
 def multiple_comments(author, news_sample):
-    comments = []
-    for i in range(222):
-        created_at = timezone.now() + timedelta(days=i + 1)
-        comments.append(
-            Comment.objects.create(
-                author=author,
-                text=f'Текст комментария {i+1}',
-                created_at=created_at,
-                news=news_sample)
-        )
+    comments = [
+        Comment.objects.create(
+            author=author,
+            text=f'Текст комментария {i+1}',
+            created_at=timezone.now() + timedelta(days=i + 1),
+            news=news_sample
+        )for i in range(222)
+    ]
     return comments

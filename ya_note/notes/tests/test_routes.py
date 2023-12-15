@@ -32,18 +32,18 @@ class TestRoute(SharedTestInput):
             (LOGIN_URL, self.client, HTTPStatus.OK),
             (LOGOUT_URL, self.client, HTTPStatus.OK),
         )
+
         for url, param_client, status in user_statuses:
-            self.assertEqual(param_client.get(url).status_code, status)
+            with self.subTest(url=url, client=param_client, status=status):
+                self.assertEqual(param_client.get(url).status_code, status)
 
     def test_redirect_for_anonymous_client(self):
         urls = (
-            (NOTE_LIST_URL),
-            (NOTES_DETAIL_URL),
-            (NOTES_EDIT_URL),
-            (NOTES_DELETE_URL)
+            (NOTE_LIST_URL, f'{LOGIN_URL}?next='),
+            (NOTES_DETAIL_URL, f'{LOGIN_URL}?next='),
+            (NOTES_EDIT_URL, f'{LOGIN_URL}?next='),
+            (NOTES_DELETE_URL, f'{LOGIN_URL}?next=')
         )
-        for name in urls:
-            with self.subTest(name=name):
-                self.assertRedirects(
-                    self.client.get(name), f'{LOGIN_URL}?next={name}'
-                )
+        for url, redirect in urls:
+            with self.subTest(name=url):
+                self.assertRedirects(self.client.get(url), f'{redirect}{url}')
