@@ -7,32 +7,32 @@ User = get_user_model()
 
 
 class SharedTestInput(TestCase):
+    generate_note_list_author = False
+    generate_single_note = False
+
     @classmethod
     def setUpTestData(cls):
         cls.user_author = User.objects.create(username='author')
-        cls.user_another = User.objects.create(username='another')
-        cls.client_another = Client()
         cls.client_author = Client()
         cls.client_author.force_login(cls.user_author)
+        cls.user_another = User.objects.create(username='another')
+        cls.client_another = Client()
         cls.client_another.force_login(cls.user_another)
 
-    @classmethod
-    def generate_single_note(cls):
-        cls.note = Note.objects.create(
-            title='Заметка 1',
-            text='Просто текст',
-            author=cls.user_author,
-            slug='Zametka-1'
-        )
-
-    @classmethod
-    def generate_note_list_author(cls, num_notes=11):
-        Note.objects.bulk_create([
-            Note(
-                title=f'Заметка {index}',
-                text='Просто текст.',
+        if cls.generate_single_note is True:
+            cls.note = Note.objects.create(
+                title='Заметка 1',
+                text='Просто текст',
                 author=cls.user_author,
-                slug=f'Zametka-{index}'
+                slug='Zametka-1'
             )
-            for index in range(num_notes)
-        ])
+
+        if cls.generate_note_list_author is True:
+            Note.objects.bulk_create(
+                Note(
+                    title=f'Заметка {index}',
+                    text='Просто текст.',
+                    author=cls.user_author,
+                    slug=f'Zametka-{index}'
+                )for index in range(11)
+            )

@@ -8,7 +8,7 @@ from notes.models import Note
 from .shared_test_input import SharedTestInput
 from .shared_urls import (
     NOTES_ADD_URL,
-    NOTE_CREATE_SUCCESS,
+    NOTE_CREATE_SUCCESS_URL,
     NOTES_DELETE_URL,
     NOTES_EDIT_URL,
 )
@@ -36,9 +36,9 @@ FORM_DATA_DUPLICATE_SLUG = {
 
 
 class TestNoteCreateEditDelete(SharedTestInput):
+    generate_single_note = True
 
     def test_anonymous_user_cannot_create_note(self):
-        self.generate_single_note()
         initial_notes_id = [note.id for note in Note.objects.all()]
         initial_notes_text = [note.text for note in Note.objects.all()]
         initial_notes_title = [note.title for note in Note.objects.all()]
@@ -59,7 +59,7 @@ class TestNoteCreateEditDelete(SharedTestInput):
     def test_user_can_create_note(self):
         initial_note_count = Note.objects.count()
         self.assertRedirects(self.client_author.post(
-            NOTES_ADD_URL, data=FORM_DATA_NOTE), NOTE_CREATE_SUCCESS
+            NOTES_ADD_URL, data=FORM_DATA_NOTE), NOTE_CREATE_SUCCESS_URL
         )
         note_last = Note.objects.last()
         self.assertEqual(initial_note_count + 1, Note.objects.count())
@@ -70,12 +70,11 @@ class TestNoteCreateEditDelete(SharedTestInput):
 
         unchanged_notes = Note.objects.exclude(id=note_last.id)
         for note in unchanged_notes:
-            self.assertEqual(note.title, f"Заметка {note}")
-            self.assertEqual(note.text, "Просто текст")
+            self.assertEqual(note.title, f'{note}')
+            self.assertEqual(note.text, 'Просто текст')
         self.assertEqual(initial_note_count + 1, Note.objects.count())
 
     def test_author_can_delete_note(self):
-        self.generate_single_note()
         initial_note_count = Note.objects.count()
         self.client_author.delete(NOTES_DELETE_URL)
         final_note_count = Note.objects.count()
@@ -83,12 +82,11 @@ class TestNoteCreateEditDelete(SharedTestInput):
         remaining_notes = Note.objects.filter(
             id__in=[note.id for note in Note.objects.all()])
         for note in remaining_notes:
-            self.assertEqual(note.title, f"Заметка {note}")
-            self.assertEqual(note.text, "Просто текст")
+            self.assertEqual(note.title, f'{note}')
+            self.assertEqual(note.text, 'Просто текст')
         self.assertEqual(initial_note_count - 1, Note.objects.count())
 
     def test_user_cant_delete_note_of_another_user(self):
-        self.generate_single_note()
         self.client_another.delete(NOTES_DELETE_URL)
         self.assertNotEqual(
             self.client_another.delete(
@@ -102,7 +100,6 @@ class TestNoteCreateEditDelete(SharedTestInput):
         self.assertEqual(deleted_note.author, self.user_author)
 
     def test_author_can_edit_note(self):
-        self.generate_single_note()
         self.assertIn(
             self.client_author.post(
                 NOTES_EDIT_URL, data=FORM_DATA_NOTE
@@ -115,7 +112,6 @@ class TestNoteCreateEditDelete(SharedTestInput):
         self.assertEqual(updated_note.author, self.user_author)
 
     def test_user_cant_edit_note_of_another_user(self):
-        self.generate_single_note()
         self.assertEqual(self.client_another.post(
             NOTES_EDIT_URL, data=FORM_DATA_NOTE
         ).status_code, HTTPStatus.NOT_FOUND)
@@ -123,7 +119,6 @@ class TestNoteCreateEditDelete(SharedTestInput):
         self.assertEqual(updated_note.author, self.user_author)
 
     def test_cannot_create_note_with_duplicate_slug(self):
-        self.generate_single_note()
         response = self.client_author.post(
             NOTES_ADD_URL,
             data=FORM_DATA_DUPLICATE_SLUG
@@ -137,8 +132,8 @@ class TestNoteCreateEditDelete(SharedTestInput):
         self.assertRedirects(self.client_author.post(
             NOTES_ADD_URL,
             data=FORM_DATA_NO_SLUG
-        ), NOTE_CREATE_SUCCESS)
-        self.assertEqual(Note.objects.count(), 1)
+        ), NOTE_CREATE_SUCCESS_URL)
+        self.assertEqual(Note.objects.count(), 2)
         created_note = Note.objects.get(
             title=FORM_DATA_NO_SLUG['title'],
             author=self.user_author,

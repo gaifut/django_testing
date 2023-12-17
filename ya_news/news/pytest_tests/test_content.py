@@ -5,9 +5,6 @@ from yanews.settings import NEWS_COUNT_ON_HOME_PAGE
 
 pytestmark = pytest.mark.django_db
 
-HOMEPAGE = pytest.lazy_fixture('homepage_url')
-NEWS_DETAIL = pytest.lazy_fixture('news_detail_url')
-
 
 def test_news_per_page(client, multiple_news_samples, homepage_url):
     assert (
@@ -27,7 +24,7 @@ def test_comments_order(client, news_detail_url):
     all_comments = client.get(
         news_detail_url).context['news'].comment_set.all()
     sorted_comments = sorted(
-        all_comments, key=lambda x: x.created, reverse=True
+        all_comments, key=lambda x: x.created, reverse=False
     )
     assert list(all_comments) == sorted_comments
 

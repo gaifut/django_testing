@@ -50,6 +50,16 @@ def base_url(login_url):
     return f'{login_url}?next='
 
 
+@pytest.fixture
+def delete_comment_redirect_url(base_url, delete_comment_url):
+    return f"{base_url}{delete_comment_url}"
+
+
+@pytest.fixture
+def edit_comment_redirect_url(base_url, edit_comment_url):
+    return f"{base_url}{edit_comment_url}"
+
+
 # Users and clients
 @pytest.fixture
 def author(django_user_model):
@@ -95,7 +105,7 @@ def comment(author, news_sample):
 
 @pytest.fixture
 def multiple_news_samples():
-    News.objects.bulk_create([News(
+    News.objects.bulk_create(News(
         title=f'Новость {i}',
         text=f'Текст новости {i}',
         date=datetime.today() - timedelta(days=i),
@@ -103,17 +113,16 @@ def multiple_news_samples():
         for i in range(
         0 + 1, NEWS_COUNT_ON_HOME_PAGE
         + 1 + 1)
-    ])
+    )
 
 
 @pytest.fixture
 def multiple_comments(author, news_sample):
-    comments = [
-        Comment.objects.create(
+    Comment.objects.create(
+        Comment(
             author=author,
             text=f'Текст комментария {i+1}',
             created_at=timezone.now() + timedelta(days=i + 1),
             news=news_sample
         )for i in range(222)
-    ]
-    return comments
+    )
