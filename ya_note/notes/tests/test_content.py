@@ -16,12 +16,21 @@ User = get_user_model()
 
 class Notelistpage(SharedTestInput):
     generate_note_list_author = True
+    notes_created = Note.objects.all()
 
     def test_notes_list_display(self):
-        self.assertIn(
-            Note.objects.first(),
-            self.client_author.get(NOTE_LIST_URL).context['object_list']
-        )
+        for created_note in self.notes_created:
+            object_list = self.client_author.get(
+                NOTE_LIST_URL).context['object_list']
+            self.assertIn(created_note, object_list)
+        matching_note = next((
+            note for note in object_list if note == created_note
+        ))
+        for field in ['title', 'text', 'author', 'slug']:
+            self.assertEqual(
+                getattr(created_note, field),
+                getattr(matching_note, field)
+            )
 
 
 class Notepage(SharedTestInput):

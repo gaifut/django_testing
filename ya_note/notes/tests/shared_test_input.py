@@ -28,7 +28,7 @@ class SharedTestInput(TestCase):
             )
 
         if cls.generate_note_list_author is True:
-            Note.objects.bulk_create(
+            cls.notes = Note.objects.bulk_create(
                 Note(
                     title=f'Заметка {index}',
                     text='Просто текст.',
