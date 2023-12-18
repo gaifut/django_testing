@@ -18,7 +18,13 @@ User = get_user_model()
 
 
 class TestRoute(SharedTestInput):
-    generate_note_list_author = True
+    @classmethod
+    def setUpTestData(
+        cls,
+        generate_single_note=False,
+        generate_note_list_author=False
+    ):
+        super().setUpTestData(generate_note_list_author=True)
 
     def test_availability_for_authorised_users(self):
         user_statuses = (
@@ -39,12 +45,12 @@ class TestRoute(SharedTestInput):
                 self.assertEqual(param_client.get(url).status_code, status)
 
     def test_redirect_for_anonymous_client(self):
-        urls = (
+        cases = (
             (NOTE_LIST_URL, f'{LOGIN_URL}?next={NOTE_LIST_URL}'),
             (NOTES_DETAIL_URL, f'{LOGIN_URL}?next={NOTES_DETAIL_URL}'),
             (NOTES_EDIT_URL, f'{LOGIN_URL}?next={NOTES_EDIT_URL}'),
             (NOTES_DELETE_URL, f'{LOGIN_URL}?next={NOTES_DELETE_URL}')
         )
-        for url, redirect in urls:
-            with self.subTest(name=url):
+        for url, redirect in cases:
+            with self.subTest(url=url):
                 self.assertRedirects(self.client.get(url), redirect)

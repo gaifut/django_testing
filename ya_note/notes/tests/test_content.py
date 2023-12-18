@@ -16,14 +16,26 @@ User = get_user_model()
 
 
 class Notelistpage(SharedTestInput):
-    generate_single_note = True
+    @classmethod
+    def setUpTestData(
+        cls,
+        generate_single_note=False,
+        generate_note_list_author=False
+    ):
+        super().setUpTestData(generate_single_note=True)
+
     notes_created = Note.objects.all()
 
     def test_notes_list_display(self):
         created_note = Note.objects.get(slug=SLUG)
         self.assertIn(created_note, self.client_author.get(
             NOTE_LIST_URL).context['object_list'])
-        matching_note = Note.objects.get(id=self.note.id)
+        matching_note = next(
+            filter(
+                lambda note: note.id == created_note.id,
+                self.client_author.get(
+                    NOTE_LIST_URL).context['object_list']
+            ))
         self.assertEqual(created_note.title, matching_note.title)
         self.assertEqual(created_note.text, matching_note.text)
         self.assertEqual(created_note.author, matching_note.author)

@@ -7,11 +7,13 @@ User = get_user_model()
 
 
 class SharedTestInput(TestCase):
-    generate_note_list_author = False
-    generate_single_note = False
 
     @classmethod
-    def setUpTestData(cls):
+    def setUpTestData(
+        cls,
+        generate_single_note=False,
+        generate_note_list_author=False
+    ):
         cls.user_author = User.objects.create(username='author')
         cls.client_author = Client()
         cls.client_author.force_login(cls.user_author)
@@ -19,7 +21,7 @@ class SharedTestInput(TestCase):
         cls.client_another = Client()
         cls.client_another.force_login(cls.user_another)
 
-        if cls.generate_single_note:
+        if generate_single_note:
             cls.note = Note.objects.create(
                 title='Заметка 1',
                 text='Просто текст',
@@ -27,7 +29,7 @@ class SharedTestInput(TestCase):
                 slug='Zametka-1'
             )
 
-        if cls.generate_note_list_author:
+        if generate_note_list_author:
             cls.notes = Note.objects.bulk_create(
                 Note(
                     title=f'Заметка {index}',

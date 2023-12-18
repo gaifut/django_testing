@@ -36,22 +36,28 @@ FORM_DATA_DUPLICATE_SLUG = {
 
 
 class TestNoteCreateEditDelete(SharedTestInput):
-    generate_single_note = True
+
+    @classmethod
+    def setUpTestData(
+        cls,
+        generate_single_note=False,
+        generate_note_list_author=False
+    ):
+        super().setUpTestData(generate_single_note=True)
+
+    notes_created = Note.objects.all()
 
     def test_anonymous_user_cannot_create_note(self):
-        initial_notes = set(Note.objects.all())
-        initial_note_count = Note.objects.count()
+        notes = set(self.notes_created)
         self.client.post(NOTES_ADD_URL, data=FORM_DATA_NOTE)
-        self.assertEqual(initial_note_count, Note.objects.count())
-        self.assertEqual(initial_notes, set(Note.objects.all()))
+        self.assertEqual(notes, set(Note.objects.all()))
 
     def test_user_can_create_note(self):
-        notes_inital = set(Note.objects.all())
+        notes = set(self.notes_created)
         self.assertRedirects(self.client_author.post(
             NOTES_ADD_URL, data=FORM_DATA_NOTE), NOTE_CREATE_SUCCESS_URL
         )
-        notes_final = set(Note.objects.all())
-        difference = notes_final - notes_inital
+        difference = set(Note.objects.all()) - notes
         self.assertEqual(len(difference), 1)
         new_note = difference.pop()
         self.assertEqual(new_note.title, FORM_DATA_NOTE['title'])
@@ -62,67 +68,49 @@ class TestNoteCreateEditDelete(SharedTestInput):
     def test_author_can_delete_note(self):
         initial_notes_count = Note.objects.count()
         self.client_author.delete(NOTES_DELETE_URL)
-        final_notes_count = Note.objects.count()
-        self.assertEqual(initial_notes_count, final_notes_count + 1)
-        self.assertNotIn(Note.objects.filter(slug=SLUG), Note.objects.all())
+        self.assertEqual(initial_notes_count, Note.objects.count() + 1)
+        self.assertFalse(Note.objects.filter(slug=SLUG).exists())
 
     def test_user_cant_delete_note_of_another_user(self):
-        note_to_delete_before_delete_attempt = Note.objects.get(slug=SLUG)
-        self.assertNotEqual(
+        self.assertEqual(
             self.client_another.delete(
-                NOTES_DELETE_URL).status_code, HTTPStatus.NO_CONTENT
+                NOTES_DELETE_URL).status_code, HTTPStatus.NOT_FOUND
         )
-        note_to_delete_after_delete_attempt = Note.objects.get(slug=SLUG)
-
-        self.assertEqual(
-            note_to_delete_before_delete_attempt.author,
-            note_to_delete_after_delete_attempt.author
-        )
-        self.assertEqual(
-            note_to_delete_before_delete_attempt.title,
-            note_to_delete_after_delete_attempt.title
-        )
-        self.assertEqual(
-            note_to_delete_before_delete_attempt.text,
-            note_to_delete_after_delete_attempt.text
-        )
-        self.assertEqual(
-            note_to_delete_before_delete_attempt.slug,
-            note_to_delete_after_delete_attempt.slug
-        )
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(self.note.author, note.author)
+        self.assertEqual(self.note.title, note.title)
+        self.assertEqual(self.note.text, note.text)
+        self.assertEqual(self.note.slug, note.slug)
 
     def test_author_can_edit_note(self):
-        original_note = Note.objects.get(slug=SLUG)
         self.assertEqual(
             self.client_author.post(
                 NOTES_EDIT_URL, data=FORM_DATA_NOTE
             ).status_code, HTTPStatus.FOUND
         )
-        updated_note = Note.objects.get(id=self.note.id)
-        self.assertEqual(updated_note.title, FORM_DATA_NOTE['title'])
-        self.assertEqual(updated_note.text, FORM_DATA_NOTE['text'])
-        self.assertEqual(updated_note.slug, FORM_DATA_NOTE['slug'])
-        self.assertEqual(updated_note.author, original_note.author)
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(note.title, FORM_DATA_NOTE['title'])
+        self.assertEqual(note.text, FORM_DATA_NOTE['text'])
+        self.assertEqual(note.slug, FORM_DATA_NOTE['slug'])
+        self.assertEqual(note.author, self.note.author)
 
     def test_user_cant_edit_note_of_another_user(self):
-        initial_note = Note.objects.get(slug=SLUG)
         self.assertEqual(self.client_another.post(
             NOTES_EDIT_URL, data=FORM_DATA_NOTE
         ).status_code, HTTPStatus.NOT_FOUND)
-        final_note = Note.objects.get(id=self.note.id)
-        self.assertEqual(initial_note.author, final_note.author)
-        self.assertEqual(initial_note.title, final_note.title)
-        self.assertEqual(initial_note.text, final_note.text)
-        self.assertEqual(initial_note.slug, final_note.slug)
+        note = Note.objects.get(id=self.note.id)
+        self.assertEqual(self.note.author, note.author)
+        self.assertEqual(self.note.title, note.title)
+        self.assertEqual(self.note.text, note.text)
+        self.assertEqual(self.note.slug, note.slug)
 
     def test_cannot_create_note_with_duplicate_slug(self):
-        initial_notes = set(Note.objects.all())
+        notes = set(Note.objects.all())
         self.client_author.post(
             NOTES_ADD_URL,
             data=FORM_DATA_DUPLICATE_SLUG
         )
-        final_notes = set(Note.objects.all())
-        self.assertEqual(final_notes, initial_notes)
+        self.assertEqual(set(Note.objects.all()), notes)
 
     def test_user_can_create_note_without_slug(self):
         initial_notes = set(Note.objects.all())
