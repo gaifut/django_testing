@@ -10,7 +10,6 @@ from .shared_urls import (
     NOTE_CREATE_SUCCESS_URL,
     NOTES_DELETE_URL,
     NOTES_EDIT_URL,
-    SLUG,
 )
 
 
@@ -40,20 +39,16 @@ class TestNoteCreateEditDelete(SharedTestInput):
     @classmethod
     def setUpTestData(
         cls,
-        generate_single_note=False,
-        generate_note_list_author=False
     ):
         super().setUpTestData(generate_single_note=True)
 
-    notes_created = Note.objects.all()
-
     def test_anonymous_user_cannot_create_note(self):
-        notes = set(self.notes_created)
+        notes = set(Note.objects.all())
         self.client.post(NOTES_ADD_URL, data=FORM_DATA_NOTE)
         self.assertEqual(notes, set(Note.objects.all()))
 
     def test_user_can_create_note(self):
-        notes = set(self.notes_created)
+        notes = set(Note.objects.all())
         self.assertRedirects(self.client_author.post(
             NOTES_ADD_URL, data=FORM_DATA_NOTE), NOTE_CREATE_SUCCESS_URL
         )
@@ -69,13 +64,15 @@ class TestNoteCreateEditDelete(SharedTestInput):
         initial_notes_count = Note.objects.count()
         self.client_author.delete(NOTES_DELETE_URL)
         self.assertEqual(initial_notes_count, Note.objects.count() + 1)
-        self.assertFalse(Note.objects.filter(slug=SLUG).exists())
+        self.assertFalse(Note.objects.filter(id=self.note.id).exists())
 
     def test_user_cant_delete_note_of_another_user(self):
+        initial_notes_count = Note.objects.count()
         self.assertEqual(
             self.client_another.delete(
                 NOTES_DELETE_URL).status_code, HTTPStatus.NOT_FOUND
         )
+        self.assertEqual(initial_notes_count, Note.objects.count())
         note = Note.objects.get(id=self.note.id)
         self.assertEqual(self.note.author, note.author)
         self.assertEqual(self.note.title, note.title)
