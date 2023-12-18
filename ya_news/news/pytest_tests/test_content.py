@@ -24,7 +24,7 @@ def test_comments_order(client, news_detail_url):
     all_comments = client.get(
         news_detail_url).context['news'].comment_set.all()
     sorted_comments = sorted(
-        all_comments, key=lambda x: x.created, reverse=False
+        all_comments, key=lambda x: x.created
     )
     assert list(all_comments) == sorted_comments
 

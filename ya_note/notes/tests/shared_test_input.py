@@ -19,7 +19,7 @@ class SharedTestInput(TestCase):
         cls.client_another = Client()
         cls.client_another.force_login(cls.user_another)
 
-        if cls.generate_single_note is True:
+        if cls.generate_single_note:
             cls.note = Note.objects.create(
                 title='Заметка 1',
                 text='Просто текст',
@@ -27,7 +27,7 @@ class SharedTestInput(TestCase):
                 slug='Zametka-1'
             )
 
-        if cls.generate_note_list_author is True:
+        if cls.generate_note_list_author:
             cls.notes = Note.objects.bulk_create(
                 Note(
                     title=f'Заметка {index}',

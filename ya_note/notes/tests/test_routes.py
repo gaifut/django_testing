@@ -40,11 +40,11 @@ class TestRoute(SharedTestInput):
 
     def test_redirect_for_anonymous_client(self):
         urls = (
-            (NOTE_LIST_URL, f'{LOGIN_URL}?next='),
-            (NOTES_DETAIL_URL, f'{LOGIN_URL}?next='),
-            (NOTES_EDIT_URL, f'{LOGIN_URL}?next='),
-            (NOTES_DELETE_URL, f'{LOGIN_URL}?next=')
+            (NOTE_LIST_URL, f'{LOGIN_URL}?next={NOTE_LIST_URL}'),
+            (NOTES_DETAIL_URL, f'{LOGIN_URL}?next={NOTES_DETAIL_URL}'),
+            (NOTES_EDIT_URL, f'{LOGIN_URL}?next={NOTES_EDIT_URL}'),
+            (NOTES_DELETE_URL, f'{LOGIN_URL}?next={NOTES_DELETE_URL}')
         )
         for url, redirect in urls:
             with self.subTest(name=url):
-                self.assertRedirects(self.client.get(url), f'{redirect}{url}')
+                self.assertRedirects(self.client.get(url), redirect)
